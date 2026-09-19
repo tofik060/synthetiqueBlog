@@ -61,15 +61,45 @@ function Home() {
   const authStatus = useSelector((state) => state.auth.status);
 
   useEffect(() => {
+    if (!authStatus) {
+      setPosts([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     appwriteService
       .getPosts()
       .then((result) => {
         if (result) setPosts(result.documents);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [authStatus]);
 
   const placeholders = Math.max(0, 7 - posts.length);
+
+  if (!authStatus) {
+    return (
+      <div className="bg-mesh min-h-full w-full py-10">
+        <Container>
+          <div className="fade-up rounded-2xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center">
+            <h2 className="font-display mb-2 text-2xl font-semibold text-slate-900">
+              Login to read posts
+            </h2>
+            <p className="mb-6 text-slate-500">
+              Sign in to browse active posts from the community.
+            </p>
+            <Link
+              to="/login"
+              className="inline-flex rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white no-underline"
+            >
+              Login
+            </Link>
+          </div>
+        </Container>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-mesh min-h-full w-full py-10">
@@ -81,14 +111,12 @@ function Home() {
               Latest posts
             </h1>
           </div>
-          {authStatus && (
-            <Link
-              to="/add-post"
-              className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white no-underline transition hover:bg-slate-800"
-            >
-              Write a post
-            </Link>
-          )}
+          <Link
+            to="/add-post"
+            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white no-underline transition hover:bg-slate-800"
+          >
+            Write a post
+          </Link>
         </div>
 
         {loading ? (
@@ -100,18 +128,16 @@ function Home() {
         ) : posts.length === 0 ? (
           <div className="fade-up rounded-2xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center">
             <h2 className="font-display mb-2 text-2xl font-semibold text-slate-900">
-              {authStatus ? "No posts yet" : "Login to read posts"}
+              No posts yet
             </h2>
             <p className="mb-6 text-slate-500">
-              {authStatus
-                ? "Create your first post and it will show up here."
-                : "Sign in to browse active posts from the community."}
+              Create your first post and it will show up here.
             </p>
             <Link
-              to={authStatus ? "/add-post" : "/login"}
+              to="/add-post"
               className="inline-flex rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white no-underline"
             >
-              {authStatus ? "Add Post" : "Login"}
+              Add Post
             </Link>
           </div>
         ) : (
