@@ -10,9 +10,9 @@ function AllPosts() {
   useEffect(() => {
     appwriteService
       .getPosts([])
-      .then((result) => {
-        if (result) setPosts(result.documents);
-      })
+      .then((result) => appwriteService.postsWithFiles(result?.documents ?? []))
+      .then((documents) => setPosts(documents))
+      .catch(() => setPosts([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -34,7 +34,7 @@ function AllPosts() {
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center text-slate-500">
-            No posts found.
+            No posts uploaded
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

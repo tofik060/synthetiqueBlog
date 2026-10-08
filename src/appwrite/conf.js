@@ -93,6 +93,28 @@ export class cldService {
     }
   }
 
+  fileStillExists(fileId) {
+    if (!fileId) return Promise.resolve(false);
+
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve(true);
+      image.onerror = () => resolve(false);
+      image.src = String(this.getFilePreview(fileId));
+    });
+  }
+
+  async postsWithFiles(documents = []) {
+    const checked = await Promise.all(
+      documents.map(async (post) => {
+        const exists = await this.fileStillExists(post.featuredImage);
+        return exists ? post : null;
+      }),
+    );
+
+    return checked.filter(Boolean);
+  }
+
   // Files Upload Service
 
   async uploadFile(file) {

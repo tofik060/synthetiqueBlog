@@ -61,22 +61,45 @@ function Home() {
   const authStatus = useSelector((state) => state.auth.status);
 
   useEffect(() => {
+    let ignore = false;
+
     if (!authStatus) {
       setPosts([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    appwriteService
-      .getPosts()
-      .then((result) => {
-        if (result) setPosts(result.documents);
-      })
-      .finally(() => setLoading(false));
-  }, [authStatus]);
+    const loadPosts = () =>
+      appwriteService
+        .getPosts()
+        .then((result) => appwriteService.postsWithFiles(result?.documents ?? []))
+        .catch(() => []);
 
-  const placeholders = Math.max(0, 7 - posts.length);
+    setLoading(true);
+    setPosts([]);
+
+    loadPosts()
+      .then((documents) => {
+        if (!ignore) setPosts(documents);
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+
+    const refreshPosts = () => {
+      if (document.visibilityState !== "visible") return;
+      loadPosts().then((documents) => {
+        if (!ignore) setPosts(documents);
+      });
+    };
+
+    document.addEventListener("visibilitychange", refreshPosts);
+
+    return () => {
+      ignore = true;
+      document.removeEventListener("visibilitychange", refreshPosts);
+    };
+  }, [authStatus]);
 
   if (!authStatus) {
     return (
@@ -128,7 +151,7 @@ function Home() {
         ) : posts.length === 0 ? (
           <div className="fade-up rounded-2xl border border-dashed border-slate-300 bg-white/70 px-6 py-16 text-center">
             <h2 className="font-display mb-2 text-2xl font-semibold text-slate-900">
-              No posts yet
+              No posts uploaded
             </h2>
             <p className="mb-6 text-slate-500">
               Create your first post and it will show up here.
@@ -145,9 +168,6 @@ function Home() {
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {posts.map((post) => (
                 <PostCard key={post.$id} {...post} />
-              ))}
-              {Array.from({ length: placeholders }).map((_, i) => (
-                <PostCardSkeleton key={`ph-${i}`} />
               ))}
             </div>
             <MetricsCard />
